@@ -2,11 +2,14 @@
 
 // blob:chrome-extension%3A//bmnblgpojbjdapehlahepjelclghjfjf/eac94ad2-d2aa-4673-90a7-4b249bb7f81a
 // indexedDB.deleteDatabase('blob:chrome-extension*');
-
+let first_reading=true;
+let first_reading_time;
+let last_read_time=null;
+let velos = []
 async function  monitor(port) {
       console.log('monitor()')
 	  const decoder = new TextDecoder();
-	  velos = []
+	 
 	  sbuffer="";
       while (port.readable) {
         
@@ -21,6 +24,12 @@ async function  monitor(port) {
               this.open = false
               break;
             }
+			last_read_time = new Date();
+			if(first_reading)
+			{
+				first_reading=false;
+				first_reading_time=new Date();
+			}
             const decoded = decoder.decode(value)
             console.log('read complete:', decoded, value, done)
 			sbuffer = subffer + decoded;
@@ -28,7 +37,9 @@ async function  monitor(port) {
 			{
 				if(sbuffer[i] == '\r')
 				{
-					velo = sbuffer.slice(o,i);
+					velo = sbuffer.slice(0,i);
+					document.getElementById('lastVelocity').innerText = document.getElementById('velocity').innerText;
+					document.getElementById('velocity').innerText = velo;
 					velos.push(parseFloat(velo));
 					
 					break;
@@ -42,6 +53,17 @@ async function  monitor(port) {
         }
       }
     }
+	
+function timerCallback(){
+	let current = new Date();
+	let diff = current-last_read_time;
+	if(diff > 1000 && velos.length != 0)
+	{
+		var max_velo = Math.max(...velos);
+		chrome.tts.speak("" + max_velo);
+		velos= [];
+	}
+}
 
  function windowInitialized() {
 
@@ -64,7 +86,7 @@ document.querySelector('button').addEventListener('click', async () => {
   const port = await navigator.serial.requestPort();
   await port.open({ baudRate: 9600 });
   
-  
+  window.setInterval(timerCallback, 100);
 });
 
 
