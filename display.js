@@ -84,8 +84,15 @@ function timerCallback(){
 document.querySelector('button').addEventListener('click', async () => {
   // Prompt user to select any serial port.
   const port = await navigator.serial.requestPort();
+  try{
   await port.open({ baudRate: 9600 });
+   monitor(port);
+  }
+  catch(e){
+	alert(e.message);
+  }
   
+ 
   window.setInterval(timerCallback, 100);
 });
 
