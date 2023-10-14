@@ -32,12 +32,13 @@ async function  monitor(port) {
 			}
             const decoded = decoder.decode(value)
             console.log('read complete:', decoded, value, done)
-			sbuffer = subffer + decoded;
+			sbuffer = sbuffer + decoded;
             for(let i = 0; i < sbuffer.length;i++)
 			{
 				if(sbuffer[i] == '\r')
 				{
 					velo = sbuffer.slice(0,i);
+					sbuffer = sbuffer.substring(i+1);
 					document.getElementById('lastVelocity').innerText = document.getElementById('velocity').innerText;
 					document.getElementById('velocity').innerText = velo;
 					velos.push(parseFloat(velo));
@@ -60,7 +61,12 @@ function timerCallback(){
 	if(diff > 1000 && velos.length != 0)
 	{
 		var max_velo = Math.max(...velos);
-		chrome.tts.speak("" + max_velo);
+		if(chrome.tts){
+			chrome.tts.speak();
+		}
+		const utterance = new SpeechSynthesisUtterance("" + max_velo);
+        speechSynthesis.speak(utterance);
+		last_read_time = current;
 		velos= [];
 	}
 }
@@ -84,16 +90,11 @@ function timerCallback(){
 document.querySelector('button').addEventListener('click', async () => {
   // Prompt user to select any serial port.
   const port = await navigator.serial.requestPort();
-  try{
   await port.open({ baudRate: 9600 });
-   monitor(port);
-  }
-  catch(e){
-	alert(e.message);
-  }
-  
- 
+  document.getElementById('top-button').style.display = 'none';
+  monitor(port);
   window.setInterval(timerCallback, 100);
+  
 });
 
 
